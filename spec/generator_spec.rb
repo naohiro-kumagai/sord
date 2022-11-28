@@ -187,6 +187,62 @@ describe Sord::Generator do
     RUBY
   end
 
+  it 'private methods are defined in private rbs' do
+    YARD.parse_string(<<-RUBY)
+      module A
+        class B
+          # @return [String]
+          def foo; end
+
+          # @return [String]
+          private attr_accessor :some_attr
+
+          # @return [String]
+          private def foo?; end
+
+          private
+
+          # @return [String]
+          attr_reader :some_attr_reader
+
+          # @param [String] x
+          # @return [String]
+          def bar(x); end
+        end
+      end
+    RUBY
+
+    # expect(rbi_gen.generate.strip).to eq fix_heredoc(<<-RUBY)
+    #   # typed: strong
+    #   module A
+    #     class B
+    #       sig { returns(String) }
+    #       def foo; end
+    #     end
+    #   end
+    # RUBY
+
+    expect(rbs_gen.generate.strip).to eq fix_heredoc(<<-RUBY)
+      module A
+        class B
+          def foo: () -> String
+
+          private
+
+          def foo?: () -> String
+
+          # _@param_ `x`
+          def bar: (String x) -> String
+
+          # Returns the value of attribute some_attr.
+          attr_accessor some_attr: String
+
+          attr_reader some_attr_reader: String
+        end
+      end
+    RUBY
+  end
+
   it 'hides private objects when using @hide_private' do
     YARD.parse_string(<<-RUBY)
       module A
@@ -283,7 +339,7 @@ describe Sord::Generator do
         module C
           class D
             # sord omit - excluding untyped
-      
+
             # sord omit - excluding untyped attribute
           end
         end
