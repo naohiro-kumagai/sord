@@ -13,3 +13,5 @@
 Gemfile.lock
 
 sord_examples/
+
+vendor/bundle
